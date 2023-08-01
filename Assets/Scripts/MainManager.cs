@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -10,7 +11,7 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
-    public Text ScoreText;
+    public Text ScoreText, highScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -18,7 +19,9 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
+    private int highScore = 0;
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -36,6 +39,29 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        if (GameManager.Instance != null)
+        {
+            ScoreText.text = $"{GameManager.Instance.playerName}'s Score : 0";
+        }
+        else
+        {
+            ScoreText.text = $"Score : 0";
+        }
+
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            highScore = data.highScore;
+            highScoreText.text = $"Best Score : {data.highName} : {highScore}";
+        }
+        else
+        {
+            highScoreText.text = "Best Score : None";
+        }
+  
     }
 
     private void Update()
@@ -62,14 +88,44 @@ public class MainManager : MonoBehaviour
         }
     }
 
+    [System.Serializable]
+    class SaveData
+    {
+        public string highName;
+        public int highScore;
+    }
+
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        if (GameManager.Instance != null)
+        {
+            ScoreText.text = $"{GameManager.Instance.playerName}'s Score : {m_Points}";
+        }
+        else
+        {
+            ScoreText.text = $"Score : {m_Points}";
+        }
+
+        if (m_Points > highScore && GameManager.Instance != null)
+        {
+            highScoreText.text = $"Best Score : {GameManager.Instance.playerName} : {m_Points}";
+        }
     }
 
     public void GameOver()
     {
+        if (m_Points > highScore && GameManager.Instance != null)
+        {
+            SaveData data = new SaveData
+            {
+                highName = GameManager.Instance.playerName,
+                highScore = m_Points
+            };
+            string json = JsonUtility.ToJson(data);
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
+
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
