@@ -6,4 +6,4 @@ This project is a part of the "Unity Learn Junior Programmer" program. The proje
 
 Project Objective:
 
-Implement data persistence between scenes and sessions.
+Implement data persistence between scenes and sessions
